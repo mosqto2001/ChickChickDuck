@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3000;
 
 let players = {};
 let star = {
@@ -56,16 +56,19 @@ io.on("connection", function (socket) {
     socket.broadcast.emit("playerMoved", players[socket.id]);
   });
 
-  socket.on('starCollected', function () {
-    if (players[socket.id].team === 'red') {
+  socket.on("starCollected", function () {
+    if (players[socket.id].team === "red") {
       scores.red += 1;
     } else {
       scores.blue += 1;
     }
-    star.x = Math.floor(Math.random() * 700) + 50;
-    star.y = Math.floor(Math.random() * 500) + 50;
-    io.emit('starLocation', star);
-    io.emit('scoreUpdate', scores);
+
+    io.emit("scoreUpdate", scores);
+
+      star.x = Math.floor(Math.random() * 700) + 50;
+      star.y = Math.floor(Math.random() * 500) + 50;
+      io.emit("starLocation", star);
+
   });
 });
 
