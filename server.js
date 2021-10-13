@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
+const port = process.env.PORT || 3000
+
 let players = {};
 let star = {
   x: Math.floor(Math.random() * 700) + 50,
@@ -67,7 +69,7 @@ io.on("connection", function (socket) {
   });
 });
 
-server.listen(8081, function () {
+server.listen(port, function () {
   console.log(`Listening on ${server.address().port}`);
 });
 
