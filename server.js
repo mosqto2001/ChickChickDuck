@@ -58,9 +58,9 @@ io.on("connection", function (socket) {
 
   socket.on('starCollected', function () {
     if (players[socket.id].team === 'red') {
-      scores.red += 10;
+      scores.red += 1;
     } else {
-      scores.blue += 10;
+      scores.blue += 1;
     }
     star.x = Math.floor(Math.random() * 700) + 50;
     star.y = Math.floor(Math.random() * 500) + 50;
