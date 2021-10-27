@@ -1,4 +1,5 @@
 var config = {
+
   type: Phaser.AUTO,
   parent: "phaser-example",
   width: 1000,
@@ -59,6 +60,7 @@ function create() {
     fontSize: "32px",
     fill: "#0000FF",
   });
+  
   this.redScoreText = this.add.text(584, 16, "", {
     fontSize: "32px",
     fill: "#FF0000",
