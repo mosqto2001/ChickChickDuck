@@ -103,10 +103,11 @@ function create() {
       self.ship,
       self.star,
       function () {
-        if(!self.ship.collected)
+        if(!self.ship.collected){
         self.ship.collected = true;
         this.socket.emit("starCollected");
         console.log("e")
+        }
       },
       null,
       self
