@@ -163,6 +163,7 @@ function update() {
       this.ship.setAcceleration(0);
     }
   }
+
 }
 
 
@@ -174,7 +175,7 @@ function addPlayer(self, playerInfo) {
   self.ship.setDrag(100);
   self.ship.setAngularDrag(100);
   self.ship.setMaxVelocity(200);
-  self.ship.setDepth(2);
+  self.ship.setDepth(3);
   self.ship.collected = false;
 }
 
@@ -187,7 +188,7 @@ function addOtherPlayers(self, playerInfo) {
     otherPlayer.alpha = 0.5;
   otherPlayer.playerId = playerInfo.playerId;
   otherPlayer.rotation = playerInfo.rotation;
-  otherPlayer.setDepth(1);
+  otherPlayer.setDepth(2);
   self.otherPlayers.add(otherPlayer);
 }
 
