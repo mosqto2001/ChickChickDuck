@@ -44,7 +44,7 @@ function create() {
     fontSize: "24px",
     fill: "#ffffff",
   });
-  scorebroadHeader.setText("Scorebroad1หก");
+  scorebroadHeader.setText("Scorebroad");
 
   self.scorebroad = self.add.text(window.innerWidth - 300, 60, "", {
     fontSize: "20px",
