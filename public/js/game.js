@@ -89,6 +89,7 @@ function create() {
   this.socket.on("scoreUpdate", function (players) {
       self.score = self.score + 1;
     showScorebroad(self,players)
+    console.log("d")
   });
 
   this.socket.on("resetScorebroad", function (players) {
@@ -106,6 +107,7 @@ function create() {
         if(!self.star.collected)
         self.star.collected = true;
         this.socket.emit("starCollected");
+        console.log("e")
       },
       null,
       self
