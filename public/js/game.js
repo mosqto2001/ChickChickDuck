@@ -99,13 +99,13 @@ function create() {
   this.socket.on("starLocation", async function (starLocation) {
     if (self.star) self.star.destroy();
     self.star = self.physics.add.image(starLocation.x, starLocation.y, "star").setDisplaySize(50, 50);
-    self.star.collected = false;
+    self.ship.collected = false;
     self.physics.add.overlap(
       self.ship,
       self.star,
       function () {
         if(!self.star.collected)
-        self.star.collected = true;
+        self.ship.collected = true;
         this.socket.emit("starCollected");
         console.log("e")
       },
@@ -113,7 +113,7 @@ function create() {
       self
     );
     setTimeout(()=>{
-      self.star.collected = false;
+      self.ship.collected = false;
     },2000)
 
   });
