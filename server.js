@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000;
 let players = {};
 var star = {
   x: Math.floor(Math.random() * 700) + 50,
-  y: Math.floor(Math.random() * 500) + 50
+  y: Math.floor(Math.random() * 500) + 50,
 };
 let scores = [];
 let playerCount = 0;
@@ -31,9 +31,9 @@ io.on("connection", function (socket) {
   };
   // send the players object to the new player
   socket.emit("currentPlayers", players);
-  socket.emit('starLocation', star);
+  socket.emit("starLocation", star);
   // update all other players of the new player
-  socket.broadcast.emit("newPlayer", players[socket.id],players);
+  socket.broadcast.emit("newPlayer", players[socket.id], players);
   socket.on("disconnect", function () {
     console.log("user disconnected");
 
@@ -41,13 +41,6 @@ io.on("connection", function (socket) {
     io.emit("playerDisconnect", socket.id);
     io.emit("resetScorebroad", players);
   });
-
-
-
-
-
-
-
 
   // when a player moves, update the player data
   socket.on("playerMovement", function (movementData) {
@@ -58,24 +51,17 @@ io.on("connection", function (socket) {
     socket.broadcast.emit("playerMoved", players[socket.id]);
   });
 
-
-
-
   socket.on("starCollected", function () {
     players[socket.id].score += 1;
     // console.log(players[socket.id].score);
 
     io.emit("scoreUpdate", players);
 
-      star.x = Math.floor(Math.random() * 1000) + 50;
-      star.y = Math.floor(Math.random() * 500) + 50;
-      io.emit("starLocation", star);
-
+    star.x = Math.floor(Math.random() * 1000) + 50;
+    star.y = Math.floor(Math.random() * 500) + 50;
+    io.emit("starLocation", star);
   });
 });
-
-
-
 
 server.listen(port, function () {
   console.log(`Listening on ${server.address().port}`);
