@@ -99,12 +99,11 @@ function create() {
   this.socket.on("starLocation", async function (starLocation) {
     if (self.star) self.star.destroy();
     self.star = self.physics.add.image(starLocation.x, starLocation.y, "star").setDisplaySize(50, 50);
-    self.ship.collected = false;
     self.physics.add.overlap(
       self.ship,
       self.star,
       function () {
-        if(!self.star.collected)
+        if(!self.ship.collected)
         self.ship.collected = true;
         this.socket.emit("starCollected");
         console.log("e")
@@ -175,6 +174,7 @@ function addPlayer(self, playerInfo) {
   self.ship.setAngularDrag(100);
   self.ship.setMaxVelocity(200);
   self.ship.setDepth(2);
+  self.ship.collected = false;
 }
 
 function addOtherPlayers(self, playerInfo) {
