@@ -2,8 +2,8 @@ var config = {
 
   type: Phaser.AUTO,
   parent: "phaser-example",
-  width: 1000,
-  height: 800,
+  width: window.innerWidth,
+  height: window.innerHeight,
   physics: {
     default: "arcade",
     arcade: {
@@ -19,33 +19,63 @@ var config = {
 };
 var game = new Phaser.Game(config);
 function preload() {
-  this.load.image("ship", "assets/spaceShips_001.png");
+  this.load.spritesheet("ship", "assets/character/character.png", {
+    frameWidth: 150,
+    frameHeight: 150,
+  });
   this.load.image("otherPlayer", "assets/enemyBlack5.png");
   this.load.image("star", "assets/star_gold.png");
 }
 function create() {
+  this.anims.create({
+    key: "idle",
+    frames: this.anims.generateFrameNumbers("ship", { frames: [0, 1,2,3,4,5] }),
+    frameRate: 8,
+    repeat: -1,
+  });
+
+  
+
   var self = this;
+  self.score = 0;
+
+
+  const scorebroadHeader = this.add.text(window.innerWidth - 300, 24, "", {
+    fontSize: "24px",
+    fill: "#ffffff",
+  });
+  scorebroadHeader.setText("Scorebroad");
+
+  self.scorebroad = self.add.text(window.innerWidth - 300, 60, "", {
+    fontSize: "20px",
+    fill: "#ffffff",
+  });
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
   this.socket.on("currentPlayers", function (players) {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
         addPlayer(self, players[id]);
+        self.ship.play("idle");
       } else {
         addOtherPlayers(self, players[id]);
       }
     });
+    showScorebroad(self,players);
   });
-  this.socket.on("newPlayer", function (playerInfo) {
+  this.socket.on("newPlayer", function (playerInfo,players) {
     addOtherPlayers(self, playerInfo);
+    showScorebroad(self,players)
   });
   this.socket.on("playerDisconnect", function (playerId) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerId === otherPlayer.playerId) {
         otherPlayer.destroy();
+        showScorebroad(self,players)
       }
     });
   });
+  
   this.socket.on("playerMoved", function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerInfo.playerId === otherPlayer.playerId) {
@@ -56,45 +86,39 @@ function create() {
   });
   this.cursors = this.input.keyboard.createCursorKeys();
 
-  this.blueScoreText = this.add.text(16, 16, "", {
-    fontSize: "32px",
-    fill: "#0000FF",
-  });
-  
-  this.redScoreText = this.add.text(584, 16, "", {
-    fontSize: "32px",
-    fill: "#FF0000",
+  this.socket.on("scoreUpdate", function (players) {
+      self.score = self.score + 1;
+    showScorebroad(self,players)
   });
 
-  this.socket.on("scoreUpdate", function (scores) {
-    self.blueScoreText.setText("Blue: " + scores.blue);
-    self.redScoreText.setText("Red: " + scores.red);
-  });
+  this.socket.on("resetScorebroad", function (players) {
+      showScorebroad(self, players);
+});
 
   this.socket.on("starLocation", async function (starLocation) {
     if (self.star) self.star.destroy();
-
-    console.log("ds")
-    self.star = self.physics.add.image(starLocation.x, starLocation.y, "star");
+    self.star = self.physics.add.image(starLocation.x, starLocation.y, "star").setDisplaySize(50, 50);
     self.star.collected = false;
     self.physics.add.overlap(
       self.ship,
       self.star,
       function () {
         if(!self.star.collected)
-        this.socket.emit("starCollected");
         self.star.collected = true;
+        this.socket.emit("starCollected");
       },
       null,
       self
     );
     setTimeout(()=>{
       self.star.collected = false;
-    },1000)
+    },2000)
 
   });
+
 }
 function update() {
+
   if (this.ship) {
     // emit player movement
     var x = this.ship.x;
@@ -129,7 +153,7 @@ function update() {
 
     if (this.cursors.up.isDown) {
       this.physics.velocityFromRotation(
-        this.ship.rotation + 1.5,
+        this.ship.rotation - 1.5,
         100,
         this.ship.body.acceleration
       );
@@ -137,34 +161,38 @@ function update() {
       this.ship.setAcceleration(0);
     }
   }
-  // this.physics.world.wrap(this.ship, 0);
 }
+
 
 function addPlayer(self, playerInfo) {
   self.ship = self.physics.add
-    .image(playerInfo.x, playerInfo.y, "ship")
-    .setOrigin(0.5, 0.5)
-    .setDisplaySize(53, 40);
-  if (playerInfo.team === "blue") {
-    self.ship.setTint(0x0000ff);
-  } else {
-    self.ship.setTint(0xff0000);
-  }
+        .sprite(playerInfo.x, playerInfo.y, "ship")
+        .setOrigin(0.5, 0.5)
+        .setDisplaySize(100, 100);
   self.ship.setDrag(100);
   self.ship.setAngularDrag(100);
   self.ship.setMaxVelocity(200);
+  self.ship.setDepth(2);
 }
 
 function addOtherPlayers(self, playerInfo) {
-  const otherPlayer = self.add
-    .sprite(playerInfo.x, playerInfo.y, "otherPlayer")
+  const otherPlayer = self.physics.add
+    .sprite(playerInfo.x, playerInfo.y, "ship")
     .setOrigin(0.5, 0.5)
-    .setDisplaySize(53, 40);
-  if (playerInfo.team === "blue") {
-    otherPlayer.setTint(0x0000ff);
-  } else {
-    otherPlayer.setTint(0xff0000);
-  }
+    .setDisplaySize(100, 100);
+    otherPlayer.play("idle");
+    otherPlayer.alpha = 0.5;
   otherPlayer.playerId = playerInfo.playerId;
+  otherPlayer.rotation = playerInfo.rotation;
+  otherPlayer.setDepth(1);
   self.otherPlayers.add(otherPlayer);
 }
+
+function showScorebroad(self,players){
+  let scoreList = [];
+  for(let player in players){
+    scoreList.push(`${players[player].playerName} : ${players[player].score}`);
+  }
+  self.scorebroad.setText(scoreList);
+}
+
