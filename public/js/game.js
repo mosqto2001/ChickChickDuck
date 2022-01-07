@@ -171,7 +171,7 @@ function addPlayer(self, playerInfo) {
   self.ship = self.physics.add
         .sprite(playerInfo.x, playerInfo.y, "ship")
         .setOrigin(0.5, 0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(200, 200);
   self.ship.setDrag(100);
   self.ship.setAngularDrag(100);
   self.ship.setMaxVelocity(200);
