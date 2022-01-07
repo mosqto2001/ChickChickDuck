@@ -19,7 +19,7 @@ var config = {
 };
 var game = new Phaser.Game(config);
 function preload() {
-  this.load.spritesheet("ship", "assets/character/character.png", {
+  this.load.spritesheet("character", "assets/img/character/character.png", {
     frameWidth: 150,
     frameHeight: 150,
   });
@@ -29,49 +29,60 @@ function preload() {
 function create() {
   this.anims.create({
     key: "idle",
-    frames: this.anims.generateFrameNumbers("ship", { frames: [0, 1,2,3,4,5] }),
-    frameRate: 8,
+    frames: this.anims.generateFrameNumbers("character", { start: 0, end: 0 }),
+    frameRate: 10,
+    repeat: -1,
+  });
+  this.anims.create({
+    key: "front",
+    frames: this.anims.generateFrameNumbers("character", { start: 0, end: 11 }),
+    frameRate: 25,
+    repeat: -1,
+  });
+  this.anims.create({
+    key: "back",
+    frames: this.anims.generateFrameNumbers("character", {
+      start: 14,
+      end: 25,
+    }),
+    frameRate: 25,
+    repeat: -1,
+  });
+  this.anims.create({
+    key: "side",
+    frames: this.anims.generateFrameNumbers("character", {
+      start: 28,
+      end: 39,
+    }),
+    frameRate: 25,
     repeat: -1,
   });
 
-  
+  cursors = this.input.keyboard.createCursorKeys();
 
   var self = this;
-  self.score = 0;
 
-
-  const scorebroadHeader = this.add.text(window.innerWidth - 300, 24, "", {
-    fontSize: "24px",
-    fill: "#ffffff",
-  });
-  scorebroadHeader.setText("Scorebroad");
-
-  self.scorebroad = self.add.text(window.innerWidth - 300, 60, "", {
-    fontSize: "20px",
-    fill: "#ffffff",
-  });
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
   this.socket.on("currentPlayers", function (players) {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
         addPlayer(self, players[id]);
-        self.ship.play("idle");
       } else {
         addOtherPlayers(self, players[id]);
       }
     });
-    showScorebroad(self,players);
+
   });
   this.socket.on("newPlayer", function (playerInfo,players) {
     addOtherPlayers(self, playerInfo);
-    showScorebroad(self,players)
+
   });
   this.socket.on("playerDisconnect", function (playerId) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerId === otherPlayer.playerId) {
         otherPlayer.destroy();
-        showScorebroad(self,players)
+
       }
     });
   });
@@ -79,124 +90,116 @@ function create() {
   this.socket.on("playerMoved", function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerInfo.playerId === otherPlayer.playerId) {
-        otherPlayer.setRotation(playerInfo.rotation);
         otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+        console.log("dsads")
+        otherPlayer.play(playerInfo.animation,true);
+        otherPlayer.flipX = playerInfo.flipX
       }
     });
   });
   this.cursors = this.input.keyboard.createCursorKeys();
 
-  this.socket.on("scoreUpdate", function (players) {
-      self.score = self.score + 1;
-    showScorebroad(self,players)
-    console.log("d")
-  });
-
-  this.socket.on("resetScorebroad", function (players) {
-      showScorebroad(self, players);
-});
-
-  this.socket.on("starLocation", async function (starLocation) {
-    if (self.star) self.star.destroy();
-    self.star = self.physics.add.image(starLocation.x, starLocation.y, "star").setDisplaySize(50, 50);
-    self.physics.add.overlap(
-      self.ship,
-      self.star,
-      function () {
-        if(!self.ship.collected){
-        self.ship.collected = true;
-        this.socket.emit("starCollected");
-        console.log("e")
-        }
-      },
-      null,
-      self
-    );
-    setTimeout(()=>{
-      self.ship.collected = false;
-    },2000)
-
-  });
-
 }
 function update() {
 
-  if (this.ship) {
+  if (this.player) {
     // emit player movement
-    var x = this.ship.x;
-    var y = this.ship.y;
-    var r = this.ship.rotation;
+    var x = this.player.x;
+    var y = this.player.y;
+    var a = this.player.animation;
+    var f = this.player.flipX;
+
+    this.player.flipX = false;
+    this.player.setVelocity(0);
+    if (cursors.left.isDown) {
+      this.player.setVelocityX(-160);
+      this.player.anims.play("side", true);
+      this.player.flipX = true;
+      this.player.animation = "side";
+      if (cursors.up.isDown) {
+        this.player.setVelocityY(-160);
+      } else if (cursors.down.isDown) {
+        this.player.setVelocityY(160);
+      }
+    } else if (cursors.right.isDown) {
+      this.player.setVelocityX(160);
+      this.player.anims.play("side", true);
+      this.player.animation = "side";
+      if (cursors.up.isDown) {
+        this.player.setVelocityY(-160);
+      } else if (cursors.down.isDown) {
+        this.player.setVelocityY(160);
+      }
+    } else if (cursors.down.isDown) {
+      this.player.setVelocityY(160);
+      this.player.anims.play("front", true);
+      this.player.animation = "front";
+      if (!cursors.left.isDown && !cursors.right.isDown) {
+        this.player.setVelocityX(0);
+      }
+    } else if (cursors.up.isDown) {
+      this.player.setVelocityY(-160);
+      this.player.anims.play("back", true);
+      this.player.animation = "back";
+      if (!cursors.left.isDown && !cursors.right.isDown) {
+        this.player.setVelocityX(0);
+      }
+    } else {
+      this.player.setVelocity(0);
+      this.player.anims.play("idle", true);
+      this.player.animation = "idle";
+    }
     if (
-      this.ship.oldPosition &&
-      (x !== this.ship.oldPosition.x ||
-        y !== this.ship.oldPosition.y ||
-        r !== this.ship.oldPosition.rotation)
+      this.player.old &&
+      (x !== this.player.old.x ||
+        y !== this.player.old.y || a !== this.player.old.a)
     ) {
       this.socket.emit("playerMovement", {
-        x: this.ship.x,
-        y: this.ship.y,
-        rotation: this.ship.rotation,
+        x: this.player.x,
+        y: this.player.y,
+        animation: this.player.animation,
+        flipX: this.player.flipX,
       });
+
+   
     }
-    // save old position data
-    this.ship.oldPosition = {
-      x: this.ship.x,
-      y: this.ship.y,
-      rotation: this.ship.rotation,
+
+    this.player.old = {
+      x: this.player.x,
+      y: this.player.y,
+      a: this.player.animation,
+      f: this.player.flipX
     };
 
-    if (this.cursors.left.isDown) {
-      this.ship.setAngularVelocity(-150);
-    } else if (this.cursors.right.isDown) {
-      this.ship.setAngularVelocity(150);
-    } else {
-      this.ship.setAngularVelocity(0);
-    }
+    // if(a !== this.player.oldPosition.animation || f) {
+    //   this.socket.emit("playerAnimation", {
+    //   animation: this.player.animation,
+    //   });
+    // }
+    // save old position data
 
-    if (this.cursors.up.isDown) {
-      this.physics.velocityFromRotation(
-        this.ship.rotation - 1.5,
-        100,
-        this.ship.body.acceleration
-      );
-    } else {
-      this.ship.setAcceleration(0);
-    }
-  }
-
+}
 }
 
 
 function addPlayer(self, playerInfo) {
-  self.ship = self.physics.add
-        .sprite(playerInfo.x, playerInfo.y, "ship")
+  self.player = self.physics.add
+        .sprite(playerInfo.x, playerInfo.y, "character")
         .setOrigin(0.5, 0.5)
-        .setDisplaySize(200, 200);
-  self.ship.setDrag(100);
-  self.ship.setAngularDrag(100);
-  self.ship.setMaxVelocity(200);
-  self.ship.setDepth(3);
-  self.ship.collected = false;
+        .setDisplaySize(150, 150);
+  self.player.setDepth(3);
+  self.player.collected = false;
+  self.cameras.main.startFollow(self.player);
 }
 
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.physics.add
-    .sprite(playerInfo.x, playerInfo.y, "ship")
+    .sprite(playerInfo.x, playerInfo.y, "character")
     .setOrigin(0.5, 0.5)
-    .setDisplaySize(100, 100);
-    otherPlayer.play("idle");
+    .setDisplaySize(150, 150);
     otherPlayer.alpha = 0.5;
   otherPlayer.playerId = playerInfo.playerId;
-  otherPlayer.rotation = playerInfo.rotation;
   otherPlayer.setDepth(2);
   self.otherPlayers.add(otherPlayer);
-}
-
-function showScorebroad(self,players){
-  let scoreList = [];
-  for(let player in players){
-    scoreList.push(`${players[player].playerName} : ${players[player].score}`);
-  }
-  self.scorebroad.setText(scoreList);
 }
 
