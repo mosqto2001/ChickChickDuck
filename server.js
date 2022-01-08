@@ -23,8 +23,8 @@ io.on("connection", function (socket) {
   // create a new player
   players[socket.id] = {
     rotation: 0,
-    x: Math.floor(Math.random() * 1000) + 50,
-    y: Math.floor(Math.random() * 500) + 50,
+    x: 150,
+    y: 150,
     playerId: socket.id,
     playerName: `Player${++playerCount}`,
     score: 0,

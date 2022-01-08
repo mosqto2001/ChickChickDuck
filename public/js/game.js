@@ -23,8 +23,8 @@ function preload() {
     frameWidth: 150,
     frameHeight: 150,
   });
-  this.load.image("otherPlayer", "assets/enemyBlack5.png");
-  this.load.image("star", "assets/star_gold.png");
+  this.load.image("tiles", "assets/img/map/map.png");
+  this.load.tilemapTiledJSON("map", "assets/map_json/map.json");
 }
 function create() {
   this.anims.create({
@@ -62,6 +62,13 @@ function create() {
 
   var self = this;
 
+  let map = this.add.tilemap("map");
+  let tileset = map.addTilesetImage("map", "tiles");
+
+  let botLayer = map.createStaticLayer("ground", tileset, 0, 0);
+  let topLayer = map.createStaticLayer("object", tileset, 0, 0);
+
+
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
   this.socket.on("currentPlayers", function (players) {
@@ -91,7 +98,7 @@ function create() {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerInfo.playerId === otherPlayer.playerId) {
         otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-        console.log("dsads")
+
         otherPlayer.play(playerInfo.animation,true);
         otherPlayer.flipX = playerInfo.flipX
       }
