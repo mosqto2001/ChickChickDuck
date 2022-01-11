@@ -50,6 +50,11 @@ io.on("connection", function (socket) {
     socket.broadcast.emit("playerMoved", players[socket.id]);
   });
 
+
+  socket.on("chon", function () {
+ console.log("chon")
+  });
+  
 });
 
 server.listen(port, function () {

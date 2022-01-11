@@ -200,3 +200,76 @@ function showScorebroad(self,players){
   self.scorebroad.setText(scoreList);
 }
 
+
+
+// function update() {
+
+//   if (this.player && this.status === 1) {
+   
+//     // emit player movement
+//     var x = this.player.x;
+//     var y = this.player.y;
+//     var a = this.player.animation;
+//     var f = this.player.flipX;
+//     // this.player.setVelocityY(-160);
+//     this.player.flipX = false;
+//     if (cursors.left.isDown) {
+//       this.playerContainer.x -= speed;
+//       this.player.anims.play("side", true);
+//       this.player.flipX = true;
+//       this.player.animation = "side";
+//       if (cursors.up.isDown) {
+//         this.playerContainer.y -= speed;
+//       } else if (cursors.down.isDown) {
+//         this.playerContainer.y += speed;
+//       }
+//     } else if (cursors.right.isDown) {
+//       this.playerContainer.x += speed;
+//       this.player.anims.play("side", true);
+//       this.player.animation = "side";
+//       if (cursors.up.isDown) {
+//         this.playerContainer.y -= speed;
+//       } else if (cursors.down.isDown) {
+//         this.playerContainer.y += speed;
+//       }
+//     } else if (cursors.down.isDown) {
+//       this.playerContainer.y += speed;
+//       this.player.anims.play("front", true);
+//       this.player.animation = "front";
+//       if (!cursors.left.isDown && !cursors.right.isDown) {
+//       }
+//     } else if (cursors.up.isDown) {
+//       this.playerContainer.y -= speed;
+//       this.player.anims.play("back", true);
+//       this.player.animation = "back";
+//       if (!cursors.left.isDown && !cursors.right.isDown) {
+//       }
+//     } 
+//     else {
+//       this.player.anims.play("idle", true);
+//       this.player.animation = "idle";
+//     }
+//     if (
+//       this.player.old &&
+//       (x !== this.player.old.x ||
+//         y !== this.player.old.y || a !== this.player.old.a)
+//     ) {
+//       this.socket.emit("playerMovement", {
+//         x: this.player.x,
+//         y: this.player.y,
+//         animation: this.player.animation,
+//         flipX: this.player.flipX,
+//       });
+
+   
+//     }
+
+//     this.player.old = {
+//       x: this.player.x,
+//       y: this.player.y,
+//       a: this.player.animation,
+//       f: this.player.flipX
+//     };
+
+// }
+// }
