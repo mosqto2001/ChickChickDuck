@@ -1,8 +1,7 @@
 //let name = prompt("Your Name").value;
-let speed = 3;
+let speed = 4;
 
 var config = {
-
   type: Phaser.AUTO,
   parent: "phaser-example",
   width: window.innerWidth,
@@ -62,7 +61,10 @@ function create() {
   });
   this.anims.create({
     key: "died",
-    frames: this.anims.generateFrameNumbers("character", { start: 42, end: 52 }),
+    frames: this.anims.generateFrameNumbers("character", {
+      start: 42,
+      end: 52,
+    }),
     frameRate: 16,
     repeat: 0,
   });
@@ -70,7 +72,6 @@ function create() {
   cursors = this.input.keyboard.createCursorKeys();
 
   var self = this;
-  this.status = 1;
 
   let map = this.add.tilemap("map");
   let tileset = map.addTilesetImage("map", "tiles");
@@ -84,46 +85,39 @@ function create() {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
         addPlayer(self, players[id]);
-
       } else {
         addOtherPlayers(self, players[id]);
       }
     });
   });
 
-
-  this.socket.on("newPlayer", function (playerInfo,players) {
+  this.socket.on("newPlayer", function (playerInfo, players) {
     addOtherPlayers(self, playerInfo);
-
   });
+
   this.socket.on("playerDisconnect", function (playerId) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerId === otherPlayer.playerId) {
+        otherPlayer.nameLabel.destroy();
         otherPlayer.destroy();
-
       }
     });
   });
-  
+
   this.socket.on("playerMoved", function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-      
       if (playerInfo.playerId === otherPlayer.playerId) {
+        otherPlayer.nameLabel.setPosition(playerInfo.x, playerInfo.y - 86);
         otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-        // otherPlayer.x = playerInfo.x
-        // otherPlayer.y = playerInfo.y
-        // otherPlayer.play(playerInfo.animation,true);
-        // otherPlayer.flipX = playerInfo.flipX
+        otherPlayer.play(playerInfo.animation, true);
+        otherPlayer.flipX = playerInfo.flipX;
       }
     });
   });
-  this.cursors = this.input.keyboard.createCursorKeys();  
-
+  this.cursors = this.input.keyboard.createCursorKeys();
 }
 function update() {
-
-  if (this.player && this.status === 1) {
-   
+  if (this.player && this.playerInfo.status === 0) {
     // emit player movement
     var x = this.playerContainer.x;
     var y = this.playerContainer.y;
@@ -133,6 +127,7 @@ function update() {
     this.player.flipX = false;
     if (cursors.left.isDown) {
       this.playerContainer.x -= speed;
+
       this.player.anims.play("side", true);
       this.player.flipX = true;
       this.player.animation = "side";
@@ -162,15 +157,15 @@ function update() {
       this.player.animation = "back";
       if (!cursors.left.isDown && !cursors.right.isDown) {
       }
-    } 
-    else {
+    } else {
       this.player.anims.play("idle", true);
       this.player.animation = "idle";
     }
     if (
       this.player.old &&
       (x !== this.playerContainer.x ||
-        y !== this.playerContainer.y || a !== this.playerContainer.a)
+        y !== this.playerContainer.y ||
+        a !== this.playerContainer.a)
     ) {
       this.socket.emit("playerMovement", {
         x: this.playerContainer.x,
@@ -178,84 +173,94 @@ function update() {
         animation: this.player.animation,
         flipX: this.player.flipX,
       });
-
-   
     }
+
 
     this.player.old = {
       x: this.playerContainer.x,
       y: this.playerContainer.y,
       a: this.player.animation,
-      f: this.player.flipX
+      f: this.player.flipX,
     };
-
+  }
 }
-}
-
 
 function addPlayer(self, playerInfo) {
   let player = self.physics.add
-        .sprite(playerInfo.x, playerInfo.y, "character")
-        .setOrigin(0.5, 0.5)
-        .setDisplaySize(150, 150)
-        .setDepth(1);
-   
-   let playerContainer = self.add.container(playerInfo.x, playerInfo.y).setSize(playerInfo.width, playerInfo.height);
+    .sprite(playerInfo.x, playerInfo.y, "character")
+    .setOrigin(1.5, 1.5)
+    .setDisplaySize(150, 150)
 
-  var playerName = self.add.text(0,0,"mos",{
-    fontFamily:'Arial',
-    color:'#850606',
-  }).setFontSize(18).setOrigin(0.5, 1.5);
-  // self.physics.world.enable(playerContainer);
+  let playerContainer = self.add
+    .container(playerInfo.x, playerInfo.y)
+    .setSize(playerInfo.width, playerInfo.height)
+    .setDepth(3);
+
+  //อัครภิทักษ์ศรฆินรวัฒน์
+  var playerName = self.add
+    .text(playerInfo.width, -86, "พริ้วรักมอส", {
+      fontFamily: "Mitr",
+      color: "#fff",
+      stroke: "#000000",
+      strokeThickness: 2,
+    })
+    .setFontSize(18)
+    .setOrigin(0.5, 0.5);
+
   playerContainer.add(player);
-   playerContainer.add(playerName);
-  
-  // player.addChild(playerName)
-  self.cameras.main.startFollow(player);
+  playerContainer.add(playerName);
+
   self.player = player;
- self.playerContainer = playerContainer;
+  self.playerContainer = playerContainer;
+  self.cameras.main.startFollow(self.playerContainer);
 
-  self.playerInfo = new Character(self.socket.id,"sad","yellow",1,null,null)
+  self.playerInfo = new Character(
+    self.socket.id,
+    "sad",
+    "yellow",
+    0,
+    null,
+    null
+  );
 
-  platforms = self.physics.add.staticGroup();
-  platforms.create(600, 400, 'character');
-  let a = self.physics.add.overlap(self.player, platforms, chonText, null, self);
-  
-  function chonText(player, player2){
-    self.status= 0
-    self.socket.emit("chon");
-    let text = self.add.text(player.x, player.y-100, 'เป็นเพื่อนกัน จะได้ไม่ต้องเลิกกันนะ 😚', { font: "bold 32px arial"});
-    player.setVelocity(0);
-    player.play("died");
-    a.active = false;
+  let playerOverlapEvent = self.physics.add.overlap(self.player, self.otherPlayers, playerOverlap);
+  let playerOverlapPlayer = self.physics.add.overlap(self.otherPlayers, self.otherPlayers, playerOverlapAnother);
+
+  function playerOverlap(player1, player2) {
+    playerContainer.depth = playerContainer.y;
+    player2.depth = player2.y;
+
+    // player.setVelocity(0);
+    // player.play("died");
+    // a.active = false;
+  }
+
+  function playerOverlapAnother(player1, player2) {
+    player1.depth = player1.y;
+    player2.depth = player2.y;
   }
 }
 
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.add
-  .sprite(playerInfo.x, playerInfo.y, "character")
+    .sprite(playerInfo.x, playerInfo.y, "character")
     .setOrigin(0.5, 0.5)
-    .setDisplaySize(150, 150);
+    .setDisplaySize(150, 150)
+    .setDepth(2);
   otherPlayer.playerId = playerInfo.playerId;
-  otherPlayer.setDepth(1);
+  // otherPlayer.setDepth(2);
 
+  var playerName = self.add
+    .text(playerInfo.x, playerInfo.y - 86, "มอสรักพริ้ว", {
+      fontFamily: "Mitr",
+      color: "#fff",
+      stroke: "#000000",
+      strokeThickness: 2,
+    })
+    .setFontSize(18)
+    .setOrigin(0.5, 0.5);
 
-  let playerContainer = self.add.container(playerInfo.x, playerInfo.y).setSize(playerInfo.width, playerInfo.height);
+  otherPlayer.nameLabel = playerName;
 
-  let playerName = self.add.text(0,0,"dsad",{
-    fontFamily:'Arial',
-    color:'#850606',
-  }).setFontSize(18).setOrigin(0.5, 1.5);
-  playerContainer.add(otherPlayer);
-  playerContainer.add(playerName);
-  playerContainer.playerId = playerInfo.playerId;
- 
-  self.otherPlayers.add(playerContainer);
-  //  self.otherPlayers.add(otherPlayer);
+  self.otherPlayers.add(otherPlayer);
 }
-
-// function chonText(player, player2){
-//   this.socket.emit("chon");
-//   let text = this.add.text(player.x, player.y, 'สู้ๆ น้าที่ร้ากกก', { font: "bold 32px Kanit"});
-  
-// }

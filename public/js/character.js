@@ -4,7 +4,7 @@ class Character {
         this.id = id;
         this.name = name;
         this.color = color;
-        this.status= status;
+        this.status= status; //0 = survive, 1 = died
         this.skill_1 = skill_1;
         this.skill_2 = skill_2;
         this.player = null;

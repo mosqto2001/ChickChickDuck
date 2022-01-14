@@ -51,9 +51,10 @@ io.on("connection", function (socket) {
   });
 
 
-  socket.on("chon", function () {
- console.log("chon")
-  });
+//   socket.on("chon", function (p,p1) {
+//  console.log("p2 " + p)
+//  console.log("p1 " + p1)
+//   });
   
 });
 
