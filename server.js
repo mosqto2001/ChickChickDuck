@@ -29,10 +29,18 @@ io.on("connection", function (socket) {
     playerName: `Player${++playerCount}`,
     score: 0,
   };
+  
   // send the players object to the new player
   socket.emit("currentPlayers", players);
   // update all other players of the new player
-  socket.broadcast.emit("newPlayer", players[socket.id], players);
+  socket.broadcast.emit("newPlayer", players[socket.id]);
+
+  socket.on("playerInfoUpdate", function (playerInfo) {
+    players[socket.id].playerInfo = playerInfo;
+    console.log(playerInfo)
+    socket.broadcast.emit("playerInfo",playerInfo);
+  });
+
   socket.on("disconnect", function () {
     console.log("user disconnected");
 

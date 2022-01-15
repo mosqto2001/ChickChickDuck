@@ -1,5 +1,6 @@
 //let name = prompt("Your Name").value;
 let speed = 4;
+let color;
 
 var config = {
   type: Phaser.AUTO,
@@ -21,57 +22,21 @@ var config = {
 };
 var game = new Phaser.Game(config);
 function preload() {
-  this.load.spritesheet("character", "assets/img/character/character.png", {
-    frameWidth: 150,
-    frameHeight: 150,
-  });
-  this.load.image("tiles", "assets/img/map/map.png");
-  this.load.tilemapTiledJSON("map", "assets/map_json/map.json");
+  loadSprite(this);
 }
 function create() {
-  this.anims.create({
-    key: "idle",
-    frames: this.anims.generateFrameNumbers("character", { start: 0, end: 0 }),
-    frameRate: 10,
-    repeat: -1,
-  });
-  this.anims.create({
-    key: "front",
-    frames: this.anims.generateFrameNumbers("character", { start: 0, end: 11 }),
-    frameRate: 25,
-    repeat: -1,
-  });
-  this.anims.create({
-    key: "back",
-    frames: this.anims.generateFrameNumbers("character", {
-      start: 14,
-      end: 25,
-    }),
-    frameRate: 25,
-    repeat: -1,
-  });
-  this.anims.create({
-    key: "side",
-    frames: this.anims.generateFrameNumbers("character", {
-      start: 28,
-      end: 39,
-    }),
-    frameRate: 25,
-    repeat: -1,
-  });
-  this.anims.create({
-    key: "died",
-    frames: this.anims.generateFrameNumbers("character", {
-      start: 42,
-      end: 52,
-    }),
-    frameRate: 16,
-    repeat: 0,
-  });
+  createAnimation(this);
 
+  
   cursors = this.input.keyboard.createCursorKeys();
 
   var self = this;
+
+  let player = self.physics.add
+    .sprite(50, 50, "cha_red")
+    .setOrigin(1.5, 1.5)
+    .setDisplaySize(150, 150)
+
 
   let map = this.add.tilemap("map");
   let tileset = map.addTilesetImage("map", "tiles");
@@ -86,13 +51,17 @@ function create() {
       if (players[id].playerId === self.socket.id) {
         addPlayer(self, players[id]);
       } else {
+        console.log(players[id])
         addOtherPlayers(self, players[id]);
+
       }
     });
   });
 
   this.socket.on("newPlayer", function (playerInfo, players) {
+    console.log(playerInfo)
     addOtherPlayers(self, playerInfo);
+
   });
 
   this.socket.on("playerDisconnect", function (playerId) {
@@ -114,23 +83,35 @@ function create() {
       }
     });
   });
+
+  this.socket.on("playerInfo", function (playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (otherPlayer.playerId === playerInfo.id) {
+        otherPlayer.playerInfo = playerInfo;
+        console.log(otherPlayer.playerInfo.color)
+        otherPlayer.play(`${otherPlayer.playerInfo.color}_idle`)
+
+      }
+    });
+  });
+
   this.cursors = this.input.keyboard.createCursorKeys();
 }
 function update() {
   if (this.player && this.playerInfo.status === 0) {
     // emit player movement
-    var x = this.playerContainer.x;
-    var y = this.playerContainer.y;
-    var a = this.player.animation;
-    var f = this.player.flipX;
+    let x = this.playerContainer.x;
+    let y = this.playerContainer.y;
+    let a = this.player.animation;
+    let f = this.player.flipX;
     // this.player.setVelocityY(-160);
     this.player.flipX = false;
     if (cursors.left.isDown) {
       this.playerContainer.x -= speed;
 
-      this.player.anims.play("side", true);
+      this.player.anims.play(`${color}_side`, true);
       this.player.flipX = true;
-      this.player.animation = "side";
+      this.player.animation = `${color}_side`;
       if (cursors.up.isDown) {
         this.playerContainer.y -= speed;
       } else if (cursors.down.isDown) {
@@ -138,8 +119,8 @@ function update() {
       }
     } else if (cursors.right.isDown) {
       this.playerContainer.x += speed;
-      this.player.anims.play("side", true);
-      this.player.animation = "side";
+      this.player.anims.play(`${color}_side`, true);
+      this.player.animation = `${color}_side`;
       if (cursors.up.isDown) {
         this.playerContainer.y -= speed;
       } else if (cursors.down.isDown) {
@@ -147,19 +128,19 @@ function update() {
       }
     } else if (cursors.down.isDown) {
       this.playerContainer.y += speed;
-      this.player.anims.play("front", true);
-      this.player.animation = "front";
+      this.player.anims.play(`${color}_front`, true);
+      this.player.animation = `${color}_front`;
       if (!cursors.left.isDown && !cursors.right.isDown) {
       }
     } else if (cursors.up.isDown) {
       this.playerContainer.y -= speed;
-      this.player.anims.play("back", true);
-      this.player.animation = "back";
+      this.player.anims.play(`${color}_back`, true);
+      this.player.animation = `${color}_back`;
       if (!cursors.left.isDown && !cursors.right.isDown) {
       }
     } else {
-      this.player.anims.play("idle", true);
-      this.player.animation = "idle";
+      this.player.anims.play(`${color}_idle`, true);
+      this.player.animation = `${color}_idle`;
     }
     if (
       this.player.old &&
@@ -185,11 +166,36 @@ function update() {
   }
 }
 
+
+
 function addPlayer(self, playerInfo) {
+  let c = "yellow"
+let ran = Math.floor(Math.random() * (5 - 1 + 1) + 1)
+if(ran % 1 === 0) c = "red"
+if(ran % 2 === 0) c = "blue"
+if(ran %3 === 0) c = "green"
+if(ran %5 === 0) c = "pink"
+
+  self.playerInfo = new Character(
+    self.socket.id,
+    "sad",
+    c,
+    0,
+    null,
+    null
+  );
+  
+  color = self.playerInfo.color
+   // `cha_${self.playerInfo.color}`
+
+   self.socket.emit("playerInfoUpdate", self.playerInfo);
+
   let player = self.physics.add
-    .sprite(playerInfo.x, playerInfo.y, "character")
+    .sprite(playerInfo.x, playerInfo.y, `cha_${self.playerInfo.color}`)//${self.playerInfo.color}
     .setOrigin(1.5, 1.5)
     .setDisplaySize(150, 150)
+
+  
 
   let playerContainer = self.add
     .container(playerInfo.x, playerInfo.y)
@@ -214,15 +220,6 @@ function addPlayer(self, playerInfo) {
   self.playerContainer = playerContainer;
   self.cameras.main.startFollow(self.playerContainer);
 
-  self.playerInfo = new Character(
-    self.socket.id,
-    "sad",
-    "yellow",
-    0,
-    null,
-    null
-  );
-
   let playerOverlapEvent = self.physics.add.overlap(self.player, self.otherPlayers, playerOverlap);
   let playerOverlapPlayer = self.physics.add.overlap(self.otherPlayers, self.otherPlayers, playerOverlapAnother);
 
@@ -240,16 +237,16 @@ function addPlayer(self, playerInfo) {
     player2.depth = player2.y;
   }
 }
-
+// `cha_${playerInfo.playerInfo.color}`
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.add
-    .sprite(playerInfo.x, playerInfo.y, "character")
+    .sprite(playerInfo.x, playerInfo.y,`cha_red`)//${playerInfo.playerInfo.color}
     .setOrigin(0.5, 0.5)
     .setDisplaySize(150, 150)
     .setDepth(2);
   otherPlayer.playerId = playerInfo.playerId;
   // otherPlayer.setDepth(2);
-
+// console.log(playerInfo.playerInfo)
   var playerName = self.add
     .text(playerInfo.x, playerInfo.y - 86, "มอสรักพริ้ว", {
       fontFamily: "Mitr",
