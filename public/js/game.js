@@ -7,6 +7,7 @@ var config = {
   parent: "phaser-example",
   width: window.innerWidth,
   height: window.innerHeight,
+  backgroundColor:'#262323',
   physics: {
     default: "arcade",
     arcade: {
@@ -18,7 +19,7 @@ var config = {
     preload: preload,
     create: create,
     update: update,
-  },
+  },  
 };
 var game = new Phaser.Game(config);
 function preload() {
@@ -27,22 +28,40 @@ function preload() {
 function create() {
   createAnimation(this);
 
-  
+  this.add.image(0, 0, 'map');
+  let p1 = this.add.image(1800, 0, 'p1');
+  let p2 = this.add.image(2600, 0, 'p2');
+  let p3 = this.add.image(3400, 0, 'p3');
+  let p4 = this.add.image(4200, 0, 'p4');
+   let p5 = this.add.image(5000, 0, 'p5');
+   let p6 = this.add.image(5800, 0, 'p6');
+    let p7 = this.add.image(6600, 0, 'p7');
+     let p8 = this.add.image(7400, 0, 'p8');
+     let p9 = this.add.image(8200, 0, 'p9');
+  p1.scale = 0.4;
+  p2.scale = 0.4;
+  p3.scale = 0.4;
+  p4.scale = 0.4;
+  p5.scale = 0.4;
+  p6.scale = 0.4;
+  p7.scale = 0.4;
+  p8.scale = 0.4;
+  p9.scale = 0.4;
   cursors = this.input.keyboard.createCursorKeys();
 
   var self = this;
 
-  let player = self.physics.add
-    .sprite(50, 50, "cha_red")
-    .setOrigin(1.5, 1.5)
-    .setDisplaySize(150, 150)
+//   let map = this.add.tilemap("map");
+//   let tileset1 = map.addTilesetImage("map", "tiles1");
+//   let tileset2 = map.addTilesetImage("plant", "tiles2");
 
+//   let botLayer = map.createStaticLayer("ground", tileset1, 0, 0);
+//   let topLayer = map.createStaticLayer("object", tileset1, 0, 0);
+//   let grassLayer = map.createStaticLayer("grass", tileset2, 0, 0);
 
-  let map = this.add.tilemap("map");
-  let tileset = map.addTilesetImage("map", "tiles");
-
-  let botLayer = map.createStaticLayer("ground", tileset, 0, 0);
-  let topLayer = map.createStaticLayer("object", tileset, 0, 0);
+// botLayer.scale = 3;
+// topLayer.scale = 3;
+// grassLayer.scale = 3;
 
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
@@ -59,7 +78,6 @@ function create() {
   });
 
   this.socket.on("newPlayer", function (playerInfo, players) {
-    console.log(playerInfo)
     addOtherPlayers(self, playerInfo);
 
   });
@@ -91,11 +109,14 @@ function create() {
         console.log(otherPlayer.playerInfo.color)
         otherPlayer.play(`${otherPlayer.playerInfo.color}_idle`)
 
+        
       }
     });
   });
 
-  this.cursors = this.input.keyboard.createCursorKeys();
+  // this.cursors = this.input.keyboard.createCursorKeys();
+
+  // this.physics.add.collider(this.player, this.map_border);
 }
 function update() {
   if (this.player && this.playerInfo.status === 0) {
@@ -170,12 +191,15 @@ function update() {
 
 function addPlayer(self, playerInfo) {
   let c = "yellow"
-let ran = Math.floor(Math.random() * (5 - 1 + 1) + 1)
-if(ran % 1 === 0) c = "red"
-if(ran % 2 === 0) c = "blue"
-if(ran %3 === 0) c = "green"
-if(ran %5 === 0) c = "pink"
-
+let ran = Math.floor(Math.random() * (10 - 1 + 1) + 1)
+// if(ran % 1 === 0) c = "red"
+// if(ran % 2 === 0) c = "blue"
+// if(ran % 3 === 0) c = "green"
+// if(ran % 5 === 0) c = "pink"
+// if(ran % 6 === 0) c = "yellow"
+if(ran > 2 ){ c = "red"}
+else{c = "yellow"}
+ 
   self.playerInfo = new Character(
     self.socket.id,
     "sad",
@@ -195,7 +219,6 @@ if(ran %5 === 0) c = "pink"
     .setOrigin(1.5, 1.5)
     .setDisplaySize(150, 150)
 
-  
 
   let playerContainer = self.add
     .container(playerInfo.x, playerInfo.y)
@@ -204,7 +227,7 @@ if(ran %5 === 0) c = "pink"
 
   //อัครภิทักษ์ศรฆินรวัฒน์
   var playerName = self.add
-    .text(playerInfo.width, -86, "พริ้วรักมอส", {
+    .text(playerInfo.width, -86, "สะพริ้ววี่วี่", {
       fontFamily: "Mitr",
       color: "#fff",
       stroke: "#000000",
@@ -220,6 +243,8 @@ if(ran %5 === 0) c = "pink"
   self.playerContainer = playerContainer;
   self.cameras.main.startFollow(self.playerContainer);
 
+
+
   let playerOverlapEvent = self.physics.add.overlap(self.player, self.otherPlayers, playerOverlap);
   let playerOverlapPlayer = self.physics.add.overlap(self.otherPlayers, self.otherPlayers, playerOverlapAnother);
 
@@ -227,9 +252,8 @@ if(ran %5 === 0) c = "pink"
     playerContainer.depth = playerContainer.y;
     player2.depth = player2.y;
 
-    // player.setVelocity(0);
-    // player.play("died");
-    // a.active = false;
+    // console.log(player2.texture.key.replace('cha_',''))
+    // player2.play(`${player2.texture.key.replace('cha_','')}_died`);
   }
 
   function playerOverlapAnother(player1, player2) {
@@ -248,7 +272,7 @@ function addOtherPlayers(self, playerInfo) {
   // otherPlayer.setDepth(2);
 // console.log(playerInfo.playerInfo)
   var playerName = self.add
-    .text(playerInfo.x, playerInfo.y - 86, "มอสรักพริ้ว", {
+    .text(playerInfo.x, playerInfo.y - 86, "มอสวีวี่", {
       fontFamily: "Mitr",
       color: "#fff",
       stroke: "#000000",
