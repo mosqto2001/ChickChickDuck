@@ -1,20 +1,15 @@
 const colors = ["yellow","red","pink","green","blue"]
 
 function loadSprite(self){
-  self.load.image("map", "assets/img/map/map.png");
+  self.load.image("map", "assets/img/map/map.png")
   self.load.image("map_border", "assets/img/map/map_border.png")
-  self.load.image("tiles2", "assets/img/map/plant.png");
-  self.load.tilemapTiledJSON("map", "assets/map_json/map.json");
+  self.load.image("tiles2", "assets/img/map/plant.png")
+  self.load.tilemapTiledJSON("map", "assets/map_json/map.json")
 
-  self.load.image("p1", "assets/img/prew/1.png");
-  self.load.image("p2", "assets/img/prew/2.png");
-  self.load.image("p3", "assets/img/prew/3.png");
-  self.load.image("p4", "assets/img/prew/4.png");
-  self.load.image("p5", "assets/img/prew/5.png");
-  self.load.image("p6", "assets/img/prew/6.png");
-  self.load.image("p7", "assets/img/prew/7.png");
-  self.load.image("p8", "assets/img/prew/8.png");
-  self.load.image("p9", "assets/img/prew/9.png");
+  self.load.spritesheet("killer_skill_1", "assets/img/skill/killer_skill_1.png", {
+    frameWidth: 300,
+    frameHeight: 300,
+  });
 
   colors.forEach((color) => {
     self.load.spritesheet(`cha_${color}`, `assets/img/character/cha_${color}.png`, {
@@ -23,6 +18,10 @@ function loadSprite(self){
     });
   })
 
+  self.load.audio("background_music", "assets/sound/background_music.mp3")
+  self.load.audio("join", "assets/sound/join.mp3")
+  self.load.audio("quit", "assets/sound/quit.mp3")
+  self.load.audio("kill", "assets/sound/kill.mp3")
 }
 
 function createAnimation(self){

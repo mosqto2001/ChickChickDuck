@@ -1,13 +1,12 @@
 //let name = prompt("Your Name").value;
 let speed = 4;
-let color;
 
 var config = {
   type: Phaser.AUTO,
   parent: "phaser-example",
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor:'#262323',
+  backgroundColor: "#262323",
   physics: {
     default: "arcade",
     arcade: {
@@ -19,7 +18,7 @@ var config = {
     preload: preload,
     create: create,
     update: update,
-  },  
+  },
 };
 var game = new Phaser.Game(config);
 function preload() {
@@ -28,40 +27,25 @@ function preload() {
 function create() {
   createAnimation(this);
 
-  this.add.image(0, 0, 'map');
-  let p1 = this.add.image(1800, 0, 'p1');
-  let p2 = this.add.image(2600, 0, 'p2');
-  let p3 = this.add.image(3400, 0, 'p3');
-  let p4 = this.add.image(4200, 0, 'p4');
-   let p5 = this.add.image(5000, 0, 'p5');
-   let p6 = this.add.image(5800, 0, 'p6');
-    let p7 = this.add.image(6600, 0, 'p7');
-     let p8 = this.add.image(7400, 0, 'p8');
-     let p9 = this.add.image(8200, 0, 'p9');
-  p1.scale = 0.4;
-  p2.scale = 0.4;
-  p3.scale = 0.4;
-  p4.scale = 0.4;
-  p5.scale = 0.4;
-  p6.scale = 0.4;
-  p7.scale = 0.4;
-  p8.scale = 0.4;
-  p9.scale = 0.4;
+  this.add.image(0, 0, "map").setDepth(-1000);
+
+  // this.map.map_border.create(0,0,"map_border").setScale(1).refreshBody();
+  //this.physics.add.staticSprite(0, 0, "map_border").setDepth(-900).refreshBody()
   cursors = this.input.keyboard.createCursorKeys();
 
   var self = this;
 
-//   let map = this.add.tilemap("map");
-//   let tileset1 = map.addTilesetImage("map", "tiles1");
-//   let tileset2 = map.addTilesetImage("plant", "tiles2");
+  this.sounds = {
+    background_music: this.sound.add("background_music", {
+      loop: true,
+      volume: 0.5,
+    }),
+    join: this.sound.add("join"),
+    quit: this.sound.add("quit"),
+    kill: this.sound.add("kill"),
+  };
 
-//   let botLayer = map.createStaticLayer("ground", tileset1, 0, 0);
-//   let topLayer = map.createStaticLayer("object", tileset1, 0, 0);
-//   let grassLayer = map.createStaticLayer("grass", tileset2, 0, 0);
-
-// botLayer.scale = 3;
-// topLayer.scale = 3;
-// grassLayer.scale = 3;
+  self.sounds.background_music.play();
 
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
@@ -70,16 +54,16 @@ function create() {
       if (players[id].playerId === self.socket.id) {
         addPlayer(self, players[id]);
       } else {
-        console.log(players[id])
         addOtherPlayers(self, players[id]);
-
       }
     });
   });
 
   this.socket.on("newPlayer", function (playerInfo, players) {
     addOtherPlayers(self, playerInfo);
+    self.sounds.join.play();
 
+    //this.sounds.join.play();
   });
 
   this.socket.on("playerDisconnect", function (playerId) {
@@ -87,6 +71,7 @@ function create() {
       if (playerId === otherPlayer.playerId) {
         otherPlayer.nameLabel.destroy();
         otherPlayer.destroy();
+        self.sounds.quit.play();
       }
     });
   });
@@ -103,21 +88,113 @@ function create() {
   });
 
   this.socket.on("playerInfo", function (playerInfo) {
-    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-      if (otherPlayer.playerId === playerInfo.id) {
-        otherPlayer.playerInfo = playerInfo;
-        console.log(otherPlayer.playerInfo.color)
-        otherPlayer.play(`${otherPlayer.playerInfo.color}_idle`)
-
-        
-      }
-    });
+    otherPlayer = self.otherPlayers
+      .getChildren()
+      .find((player) => player.playerId === playerInfo.id);
+    otherPlayer.playerInfo = playerInfo;
+    otherPlayer.play(`${otherPlayer.playerInfo.color}_idle`);
   });
 
-  // this.cursors = this.input.keyboard.createCursorKeys();
+  this.socket.on("playerDied", function (playerId) {
+    if (self.playerInfo.id === playerId) {
+      self.player.play(`${self.playerInfo.color}_died`);
+      self.playerInfo.status = 1;
+    } else {
+      let target = self.otherPlayers
+        .getChildren()
+        .find((player) => player.playerId === playerId);
+      target.playerInfo.status = 1;
+      target.play(`${target.playerInfo.color}_died`);
+    }
+  });
 
-  // this.physics.add.collider(this.player, this.map_border);
+  //skill button
+  this.userInterface = {
+    button: this.add
+      .sprite(
+        window.innerWidth - 195,
+        window.innerHeight - 150,
+        "killer_skill_1"
+      )
+      .setInteractive()
+      .on("pointerdown", () => {
+        if (!self.userInterface.isCooldown && self.playerInfo.target) {
+          skill_kill(this);
+
+          function skill_kill(self) {
+            self.socket.emit("killPlayer", self.playerInfo.target);
+            self.userInterface.setCooldown(5);
+            self.sounds.kill.play();
+            self.playerInfo.target = null;
+          }
+          
+          self.userInterface.button.on("changedata-cooldown", function () {
+            self.userInterface.cooldownLabel.setText(
+              self.userInterface.button.data.get("cooldown")
+            );
+          });
+        }
+      })
+      .setScrollFactor(0)
+      .setDisplaySize(150, 140)
+      .setAlpha(0.3),
+
+    cooldownLabel: this.add
+      .text(window.innerWidth - 200, window.innerHeight - 150, null, {
+        fontFamily: "Mitr",
+        color: "#fff",
+        stroke: "#000000",
+        strokeThickness: 1,
+      })
+      .setFontSize(32)
+      .setOrigin(0.5, 0.5)
+      .setScrollFactor(0),
+    setCooldown: function (cooldown) {
+      self.userInterface.isCooldown = true;
+      let left = cooldown;
+      let cooldownCount = setInterval(function () {
+        self.userInterface.button.data.set("cooldown", left);
+
+        if (left-- === 0) {
+          self.userInterface.isCooldown = false;
+          self.userInterface.button.data.set("cooldown", null);
+          self.userInterface.disableSkill();
+          clearInterval(cooldownCount);
+        }
+      }, 1000);
+    },
+    enableSkill: function () {
+      self.userInterface.button.setAlpha(1);
+    },
+    disableSkill: function () {
+      self.userInterface.button.setAlpha(0.3);
+    },
+    isCooldown: false,
+  };
+
+  this.userInterface.button.setDataEnabled();
+
+  // this.userInterface.button = this.add
+  //   .sprite(window.innerWidth - 200, window.innerHeight - 150, "killer_skill_1")
+  //   .setInteractive()
+  //   .on("pointerdown", () => {
+  //     this.add
+  //       .text(
+  //         this.playerContainer.x,
+  //         this.playerContainer.y - 120,
+  //         "ผมรักลุงตู่",
+  //         {
+  //           fontFamily: "Mitr",
+  //           color: "#ffff66",
+  //         }
+  //       )
+  //       .setFontSize(18)
+  //       .setOrigin(0.5, 0.5);
+  //   })
+  //   .setScrollFactor(0)
+  //   .setDisplaySize(150, 140);
 }
+
 function update() {
   if (this.player && this.playerInfo.status === 0) {
     // emit player movement
@@ -130,9 +207,9 @@ function update() {
     if (cursors.left.isDown) {
       this.playerContainer.x -= speed;
 
-      this.player.anims.play(`${color}_side`, true);
+      this.player.anims.play(`${this.playerInfo.color}_side`, true);
       this.player.flipX = true;
-      this.player.animation = `${color}_side`;
+      this.player.animation = `${this.playerInfo.color}_side`;
       if (cursors.up.isDown) {
         this.playerContainer.y -= speed;
       } else if (cursors.down.isDown) {
@@ -140,8 +217,8 @@ function update() {
       }
     } else if (cursors.right.isDown) {
       this.playerContainer.x += speed;
-      this.player.anims.play(`${color}_side`, true);
-      this.player.animation = `${color}_side`;
+      this.player.anims.play(`${this.playerInfo.color}_side`, true);
+      this.player.animation = `${this.playerInfo.color}_side`;
       if (cursors.up.isDown) {
         this.playerContainer.y -= speed;
       } else if (cursors.down.isDown) {
@@ -149,19 +226,23 @@ function update() {
       }
     } else if (cursors.down.isDown) {
       this.playerContainer.y += speed;
-      this.player.anims.play(`${color}_front`, true);
-      this.player.animation = `${color}_front`;
-      if (!cursors.left.isDown && !cursors.right.isDown) {
-      }
+      this.player.anims.play(`${this.playerInfo.color}_front`, true);
+      this.player.animation = `${this.playerInfo.color}_front`;
+
+      // console.log(this.physics.closest(this.player,this.otherPlayers))
+      // console.log(this.otherPlayers.getClosestTo(this.player))
+      // console.log(this.player)
+      // if (!cursors.left.isDown && !cursors.right.isDown) {
+      // }
     } else if (cursors.up.isDown) {
       this.playerContainer.y -= speed;
-      this.player.anims.play(`${color}_back`, true);
-      this.player.animation = `${color}_back`;
-      if (!cursors.left.isDown && !cursors.right.isDown) {
-      }
+      this.player.anims.play(`${this.playerInfo.color}_back`, true);
+      this.player.animation = `${this.playerInfo.color}_back`;
+      // if (!cursors.left.isDown && !cursors.right.isDown) {
+      // }
     } else {
-      this.player.anims.play(`${color}_idle`, true);
-      this.player.animation = `${color}_idle`;
+      this.player.anims.play(`${this.playerInfo.color}_idle`, true);
+      this.player.animation = `${this.playerInfo.color}_idle`;
     }
     if (
       this.player.old &&
@@ -177,48 +258,63 @@ function update() {
       });
     }
 
-
     this.player.old = {
       x: this.playerContainer.x,
       y: this.playerContainer.y,
       a: this.player.animation,
       f: this.player.flipX,
     };
+
+    // if(this.player.data.get('target') !== null){
+    // this.player.data.set('target', null);
+    // }
+
+    if (
+      this.player.body.embedded &&
+      !this.userInterface.isCooldown &&
+      this.playerInfo.target
+    ) {
+      this.userInterface.enableSkill();
+    } else {
+      this.userInterface.disableSkill();
+      this.playerInfo.target = null;
+    }
   }
+
+  // if(self.iss === true){
+  //   console.log(self.iss);
+  // }else{
+  // self.iss = false;
+  // }
+
+  // if(this.player.idd !== null)
+  // console.log(this.player.idd);
+
+  // this.playerInfo.target = false;
+  // if(this.playerInfo){
+  //   this.playerInfo.target = false
+
+  // }
 }
 
-
-
 function addPlayer(self, playerInfo) {
-  let c = "yellow"
-let ran = Math.floor(Math.random() * (10 - 1 + 1) + 1)
-// if(ran % 1 === 0) c = "red"
-// if(ran % 2 === 0) c = "blue"
-// if(ran % 3 === 0) c = "green"
-// if(ran % 5 === 0) c = "pink"
-// if(ran % 6 === 0) c = "yellow"
-if(ran > 2 ){ c = "red"}
-else{c = "yellow"}
- 
-  self.playerInfo = new Character(
-    self.socket.id,
-    "sad",
-    c,
-    0,
-    null,
-    null
-  );
-  
-  color = self.playerInfo.color
-   // `cha_${self.playerInfo.color}`
+  let c = "yellow";
+  let ran = Math.floor(Math.random() * (10 - 1 + 1) + 1);
+  if (ran % 1 === 0) c = "red";
+  if (ran % 2 === 0) c = "blue";
+  if (ran % 3 === 0) c = "green";
+  if (ran % 5 === 0) c = "pink";
+  if (ran % 6 === 0) c = "yellow";
 
-   self.socket.emit("playerInfoUpdate", self.playerInfo);
+  self.playerInfo = new Character(self.socket.id, "Player1", c, 0, null, null);
+
+  // color = self.playerInfo.color;
+  // `cha_${self.playerInfo.color}`
 
   let player = self.physics.add
-    .sprite(playerInfo.x, playerInfo.y, `cha_${self.playerInfo.color}`)//${self.playerInfo.color}
+    .sprite(playerInfo.x, playerInfo.y, `cha_${self.playerInfo.color}`) //${self.playerInfo.color}
     .setOrigin(1.5, 1.5)
-    .setDisplaySize(150, 150)
-
+    .setDisplaySize(150, 150);
 
   let playerContainer = self.add
     .container(playerInfo.x, playerInfo.y)
@@ -227,7 +323,7 @@ else{c = "yellow"}
 
   //อัครภิทักษ์ศรฆินรวัฒน์
   var playerName = self.add
-    .text(playerInfo.width, -86, "สะพริ้ววี่วี่", {
+    .text(playerInfo.width, -86, playerInfo.playerName, {
       fontFamily: "Mitr",
       color: "#fff",
       stroke: "#000000",
@@ -243,15 +339,43 @@ else{c = "yellow"}
   self.playerContainer = playerContainer;
   self.cameras.main.startFollow(self.playerContainer);
 
+  // self.player.setDataEnabled();
 
+  // self.player.on('changedata-target', function (obj, value) {
+  //   if(value !== null){
+  //     self.userInterface.button.setAlpha(1)
+  //     console.log(1)
+  //   }else{
+  //     self.userInterface.button.setAlpha(1)
+  //     console.log(2)
+  //   }
+  // });
 
-  let playerOverlapEvent = self.physics.add.overlap(self.player, self.otherPlayers, playerOverlap);
-  let playerOverlapPlayer = self.physics.add.overlap(self.otherPlayers, self.otherPlayers, playerOverlapAnother);
+  let playerOverlapEvent = self.physics.add.overlap(
+    self.player,
+    self.otherPlayers,
+    playerOverlap
+  );
+
+  let playerOverlapPlayer = self.physics.add.overlap(
+    self.otherPlayers,
+    self.otherPlayers,
+    playerOverlapAnother
+  );
 
   function playerOverlap(player1, player2) {
     playerContainer.depth = playerContainer.y;
     player2.depth = player2.y;
+    // self.player.data.set('target', player2.playerId);
 
+    // self.userInterface.button.setAlpha(1)
+    if (
+      typeof player2.playerInfo !== "undefined" &&
+      player2.playerInfo.status === 0
+    ) {
+      self.playerInfo.target = player2.playerId;
+    }
+    // console.log(player2.playerInfo.status)
     // console.log(player2.texture.key.replace('cha_',''))
     // player2.play(`${player2.texture.key.replace('cha_','')}_died`);
   }
@@ -260,19 +384,26 @@ else{c = "yellow"}
     player1.depth = player1.y;
     player2.depth = player2.y;
   }
+
+  self.socket.emit("playerInfoUpdate", self.playerInfo);
 }
 // `cha_${playerInfo.playerInfo.color}`
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.add
-    .sprite(playerInfo.x, playerInfo.y,`cha_red`)//${playerInfo.playerInfo.color}
+    .sprite(
+      playerInfo.x,
+      playerInfo.y,
+      playerInfo.playerInfo ? `cha_${playerInfo.playerInfo.color}` : `cha_red`
+    ) //${playerInfo.playerInfo.color}
     .setOrigin(0.5, 0.5)
     .setDisplaySize(150, 150)
     .setDepth(2);
   otherPlayer.playerId = playerInfo.playerId;
+  otherPlayer.playerInfo = playerInfo.playerInfo;
   // otherPlayer.setDepth(2);
-// console.log(playerInfo.playerInfo)
+
   var playerName = self.add
-    .text(playerInfo.x, playerInfo.y - 86, "มอสวีวี่", {
+    .text(playerInfo.x, playerInfo.y - 86, playerInfo.playerName, {
       fontFamily: "Mitr",
       color: "#fff",
       stroke: "#000000",

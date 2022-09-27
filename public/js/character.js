@@ -8,8 +8,9 @@ class Character {
         this.skill_1 = skill_1;
         this.skill_2 = skill_2;
         this.player = null;
+        this.target = null;
     }
 
-    
+
 }
 

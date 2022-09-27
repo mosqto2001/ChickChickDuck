@@ -37,7 +37,6 @@ io.on("connection", function (socket) {
 
   socket.on("playerInfoUpdate", function (playerInfo) {
     players[socket.id].playerInfo = playerInfo;
-    console.log(playerInfo)
     socket.broadcast.emit("playerInfo",playerInfo);
   });
 
@@ -59,6 +58,9 @@ io.on("connection", function (socket) {
   });
 
 
+  socket.on("killPlayer", function (playerId) {
+    io.emit("playerDied",playerId)
+  });
 //   socket.on("chon", function (p,p1) {
 //  console.log("p2 " + p)
 //  console.log("p1 " + p1)
